@@ -1,0 +1,12 @@
+{
+  "intents": [{
+    "intent": "HeyThere",
+    "slots": [{
+      "name": "To",
+      "type": "AMAZON.Person"
+    }, {
+    "name": "From",
+      "type": "AMAZON.Person"
+    }]
+  }]
+}
