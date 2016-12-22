@@ -97,15 +97,17 @@ function onIntent(intentRequest, session, callback) {
   const intentName = intent.name;
 
   switch (intentName) {
-    case 'HeyThere':
+    case 'HeyThereToFrom':
       promptForMessageResponse(intent, callback);
+      break;
+    case 'MessageBody':
+      sendSMSAndResponse(intent, session, callback);
       break;
     case 'AMAZON.HelpIntent':
       getWelcomeResponse(callback);
       break;
     default:
       throw new Error('Invalid Intent');
-      break;
   }
 }
 
@@ -132,6 +134,19 @@ function createSessionAttributesFromSlots(intent) {
     from: fromName,
     message: '',
   };
+}
+
+function sendSMSAndResponse(intent, session, callback) {
+  const message = intent.slots.Message.value;
+
+  const cardTitle = 'Hey There!';
+  const speechOutput = 'OK, sending your message!';
+  const shouldEndSession = true;
+
+  callback(
+    Object.assign({}, session.attributes, {message}),
+    buildSpeechletResponse(cardTitle, speechOutput, '', shouldEndSession)
+  );
 }
 
 function onSessionEnded(sessionEndedRequest, session) {

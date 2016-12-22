@@ -1,13 +1,20 @@
-HeyThere {To}
-HeyThere {To} it's {From}
-HeyThere {To} it is {From}
+HeyThereToFrom {To}
+HeyThereToFrom {To} it's {From}
+HeyThereToFrom {To} it is {From}
 
-HeyThere to {To}
-HeyThere to {To} from {From}
-HeyThere from {From}
-HeyThere from {From} to {To}
+HeyThereToFrom to {To}
+HeyThereToFrom to {To} from {From}
+HeyThereToFrom from {From}
+HeyThereToFrom from {From} to {To}
 
-HeyThere send a message to {To}
-HeyThere send a message to {To} from {From}
-HeyThere send a message from {From}
-HeyThere send a message from {From} to {To}
+HeyThereToFrom send a message to {To}
+HeyThereToFrom send a message to {To} from {From}
+HeyThereToFrom send a message from {From}
+HeyThereToFrom send a message from {From} to {To}
+
+MessageBody {i love you|Message}
+MessageBody {i miss you|Message}
+MessageBody {what time are you home|Message}
+MessageBody {i cant wait to see you|Message}
+MessageBody {you are the best mommy ever|Message}
+MessageBody {you are the best data ever|Message}
