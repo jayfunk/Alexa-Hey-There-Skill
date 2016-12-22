@@ -63,29 +63,37 @@ function getWelcomeResponse(callback) {
 
   callback(
     {},
-    buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession)
+    buildSpeechletResponse(speechOutput,  shouldEndSession, repromptText)
   );
 }
 
-function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
-  return {
+function buildSpeechletResponse(output, shouldEndSession, repromptText, addCard) {
+  const response = {
     outputSpeech: {
       type: 'PlainText',
       text: output,
     },
-    card: {
+    shouldEndSession,
+  };
+
+  if (addCard === true) {
+    response.card = {
       type: 'Simple',
-      title: `SessionSpeechlet - ${title}`,
+      title: `SessionSpeechlet - ${cardTitle}`,
       content: `SessionSpeechlet - ${output}`,
-    },
-    reprompt: {
+    };
+  }
+
+  if (repromptText !== undefined && repromptText !== null) {
+    response.reprompt = {
       outputSpeech: {
         type: 'PlainText',
         text: repromptText,
       },
-    },
-    shouldEndSession,
-  };
+    };
+  }
+
+  return response;
 }
 
 function buildResponse(sessionAttr, speechletResponse) {
@@ -130,7 +138,7 @@ function promptForMessageResponse(intent, callback) {
 
   callback(
     sessionAttr,
-    buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession)
+    buildSpeechletResponse(speechOutput, shouldEndSession, repromptText)
   );
 }
 
@@ -179,12 +187,12 @@ function sendSMSAndResponse(intent, session, callback) {
 
     callback(
       sessionAttr,
-      buildSpeechletResponse(cardTitle, 'OK, sending your message!', '', shouldEndSession)
+      buildSpeechletResponse('OK, sending your message!', shouldEndSession, null, true)
     );
   } catch(err) {
     callback(
       sessionAttr,
-      buildSpeechletResponse(cardTitle, err.message, '', shouldEndSession)
+      buildSpeechletResponse(err.message, shouldEndSession)
     );
   }
 }
@@ -209,7 +217,7 @@ function getCancelResponse(callback) {
   const cancelMessage = 'Ok, cancelling your message.'
   callback(
     {},
-    buildSpeechletResponse(cardTitle, cancelMessage, '', true)
+    buildSpeechletResponse(cancelMessage, true)
   );
 }
 
