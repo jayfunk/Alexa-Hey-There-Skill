@@ -112,6 +112,10 @@ function onIntent(intentRequest, session, callback) {
     case 'AMAZON.HelpIntent':
       getWelcomeResponse(callback);
       break;
+    case 'AMAZON.CancelIntent':
+    case 'AMAZON.StopIntent':
+      getCancelResponse(callback);
+      break;
     default:
       throw new Error('Invalid Intent');
   }
@@ -199,6 +203,14 @@ function getPhoneNumber(sessionAttr) {
 
 function buildSMSMessageBody(sessionAttr) {
   return `${sessionAttr.message} \n ${sessionAttr.from}`;
+}
+
+function getCancelResponse(callback) {
+  const cancelMessage = 'Ok, cancelling your message.'
+  callback(
+    {},
+    buildSpeechletResponse(cardTitle, cancelMessage, '', true)
+  );
 }
 
 function onSessionEnded(sessionEndedRequest, session) {

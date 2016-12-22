@@ -9,12 +9,16 @@
       "type": "AMAZON.Person"
     }]
   }, {
-    "intent": "AMAZON.HelpIntent"
-  }, {
     "intent": "MessageBody",
     "slots": [{
       "name": "Message",
       "type": "AMAZON.LITERAL"
     }]
+  }, {
+    "intent": "AMAZON.HelpIntent"
+  }, {
+    "intent": "AMAZON.StopIntent"
+  }, {
+    "intent": "AMAZON.CancelIntent"
   }]
 }
