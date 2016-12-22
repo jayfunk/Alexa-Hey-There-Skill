@@ -1,5 +1,12 @@
 'use strict';
 
+const http = require('http');
+const querystring = require('querystring');
+
+const cardTitle = 'Hey There!';
+const momRegex = /^(mom|dan|ma)/ig;
+const dadRegex = /^(ty|dad|pa|pop)/ig;
+
 exports.handler = (event, context, callback) => {
   try {
     console.log(`event.session.application.applicationId=${event.session.application.applicationId}`);
@@ -17,8 +24,8 @@ exports.handler = (event, context, callback) => {
         onLaunch(
           event.request,
           event.session,
-          (sessionAttributes, speechletResponse) => {
-            callback(null, buildResponse(sessionAttributes, speechletResponse));
+          (sessionAttr, speechletResponse) => {
+            callback(null, buildResponse(sessionAttr, speechletResponse));
           }
         );
         break;
@@ -26,8 +33,8 @@ exports.handler = (event, context, callback) => {
         onIntent(
           event.request,
           event.session,
-          (sessionAttributes, speechletResponse) => {
-            callback(null, buildResponse(sessionAttributes, speechletResponse));
+          (sessionAttr, speechletResponse) => {
+            callback(null, buildResponse(sessionAttr, speechletResponse));
           }
         );
         break;
@@ -50,7 +57,6 @@ function onLaunch(launchRequest, session, callback) {
 }
 
 function getWelcomeResponse(callback) {
-  const cardTitle = 'Hey There!';
   const repromptText = 'Start by saying, send a message to Danielle';
   const speechOutput = `Hey There! is a simple tool allowing you to send messages to a preconfigured set of friends. ${repromptText}`;
   const shouldEndSession = false;
@@ -82,10 +88,10 @@ function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
   };
 }
 
-function buildResponse(sessionAttributes, speechletResponse) {
+function buildResponse(sessionAttr, speechletResponse) {
   return {
     version: '1.0',
-    sessionAttributes,
+    sessionAttributes: sessionAttr,
     response: speechletResponse,
   };
 }
@@ -112,41 +118,87 @@ function onIntent(intentRequest, session, callback) {
 }
 
 function promptForMessageResponse(intent, callback) {
-  const sessionAttributes = createSessionAttributesFromSlots(intent);
+  const sessionAttr = addSlotsToSessionAttributes(intent, {});
 
-  const cardTitle = 'Hey There!';
   const repromptText = 'What\'s the message?';
-  const speechOutput = `Alright, sending a message to ${sessionAttributes.to} from ${sessionAttributes.from}. ${repromptText}`;
+  const speechOutput = `Alright, sending a message to ${sessionAttr.to} from ${sessionAttr.from}. ${repromptText}`;
   const shouldEndSession = false;
 
   callback(
-    sessionAttributes,
+    sessionAttr,
     buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession)
   );
 }
 
-function createSessionAttributesFromSlots(intent) {
-  const toName = intent.slots.To.value;
-  const fromName = intent.slots.From.value;
+function addSlotsToSessionAttributes(intent, sessionAttr) {
+  var newSessionAttributes = {};
 
-  return {
-    to: toName,
-    from: fromName,
-    message: '',
-  };
+  if(intent.name === 'HeyThereToFrom') {
+    newSessionAttributes.to = intent.slots.To.value;
+    newSessionAttributes.from = intent.slots.From.value;
+  } else if(intent.name === 'MessageBody') {
+    newSessionAttributes.message = intent.slots.Message.value;
+  }
+  const mergedSessionAttributes = Object.assign({}, sessionAttr, newSessionAttributes);
+  console.log('Updated session attributes', mergedSessionAttributes);
+  return mergedSessionAttributes;
 }
 
 function sendSMSAndResponse(intent, session, callback) {
-  const message = intent.slots.Message.value;
-
-  const cardTitle = 'Hey There!';
-  const speechOutput = 'OK, sending your message!';
   const shouldEndSession = true;
+  const sessionAttr = addSlotsToSessionAttributes(intent, session.attributes);
 
-  callback(
-    Object.assign({}, session.attributes, {message}),
-    buildSpeechletResponse(cardTitle, speechOutput, '', shouldEndSession)
-  );
+  try {
+    const number = getPhoneNumber(sessionAttr);
+    const postData = querystring.stringify({
+      'number': number,
+      'message': buildSMSMessageBody(sessionAttr),
+    });
+
+    const req = http.request({
+      hostname: 'textbelt.com',
+      path: '/text',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    }, (res) => {
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => {
+        console.log('SMS Response Body ', chunk);
+      });
+    });
+
+    req.write(postData);
+    req.end();
+
+    callback(
+      sessionAttr,
+      buildSpeechletResponse(cardTitle, 'OK, sending your message!', '', shouldEndSession)
+    );
+  } catch(err) {
+    callback(
+      sessionAttr,
+      buildSpeechletResponse(cardTitle, err.message, '', shouldEndSession)
+    );
+  }
+}
+
+function getPhoneNumber(sessionAttr) {
+  const toName = sessionAttr.to;
+
+  if (momRegex.test(toName)) {
+    return process.env.M_NUM;
+  } else if (dadRegex.test(toName)) {
+    return process.env.D_NUM;
+  }
+
+  throw new Error(`Message addressed to ${toName} was not matched to a configured number.`);
+}
+
+function buildSMSMessageBody(sessionAttr) {
+  return `${sessionAttr.message} \n ${sessionAttr.from}`;
 }
 
 function onSessionEnded(sessionEndedRequest, session) {
